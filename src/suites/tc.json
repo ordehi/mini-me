@@ -1,0 +1,29 @@
+{
+  "type": "browser",
+  "steps": [
+    {
+      "type": "launch",
+      "params": { "headless": false }
+    },
+    {
+      "type": "page",
+      "params": { "timeout": 10000, "visible": true }
+    },
+    {
+      "type": "navigate",
+      "params": "https://www.hotjar.com/"
+    },
+    {
+      "type": "evaluate",
+      "params": {
+        "fn": "tc",
+        "args": {
+          "id": 14
+        }
+      }
+    },
+    {
+      "type": "close"
+    }
+  ]
+}
