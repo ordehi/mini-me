@@ -1,10 +1,10 @@
 import { launch } from 'puppeteer';
-import { tc } from './hj.js';
+import { evals } from './hj.js';
 
-async function tryCatch(fn, params) {
+async function tryCatch(fn, params, name) {
   try {
     const result = await fn(params);
-    return result;
+    return result || `executed ${name}...`;
   } catch (err) {
     console.error(err);
     process.exit(1);
@@ -26,10 +26,6 @@ async function press(params) {
   }
 }
 
-const evals = {
-  tc,
-};
-
 // with puppeteer evaluate a function in the context of the page
 
 const functions = {
@@ -37,14 +33,16 @@ const functions = {
     const options = params.step;
     const browser = await launch(options);
     params.state.browser = browser;
+    return 'launched browser...';
   },
   page: async (params) => {
-    const { timeout } = params.step;
+    const timeout = Number(params.args.timeout) || params.step.timeout;
     const { browser } = params.state;
     const page = await browser.newPage();
     params.state.page = page;
     params.state.page.setDefaultTimeout(timeout || 30000);
     params.state.waitOptions = params.step;
+    return 'created page...';
   },
   close: async (params) => {
     const { browser } = params.state;
@@ -52,7 +50,7 @@ const functions = {
   },
   wait: async (params) => {
     const { page } = params.state;
-    const timeout = params.step;
+    const timeout = Number(params.args.timeout) || params.step.timeout;
     await page.waitForTimeout(timeout);
   },
   navigate: async (params) => {
@@ -62,6 +60,7 @@ const functions = {
     promises.push(targetPage.waitForNavigation());
     await targetPage.goto(url);
     await Promise.all(promises);
+    console.log('navigated to ' + url);
   },
   select: async (params) => {
     const { page } = params.state;
@@ -82,6 +81,7 @@ const functions = {
       options || params.state.waitOptions
     );
     await element.click(options);
+    console.log('clicked element with selector: ' + selector);
   },
   prevClick: async (params) => {
     const { page } = params.state;
@@ -135,12 +135,12 @@ const functions = {
 
     await press(end);
     await press(back);
+    console.log('cleared element with selector: ' + selector);
   },
   evaluate: async (params) => {
     const { page } = params.state;
-    const { fn } = params.step;
+    const fn = params.args.runner || params.step.fn;
     const args = params.args || params.step.args;
-    console.log(args);
     const result = await evals[fn](page, args);
     return result;
   },
@@ -155,11 +155,15 @@ async function puppet(suite, theArgs) {
   };
 
   for (const step of suite.steps) {
-    const result = await tryCatch(functions[step.type], {
-      step: step.params,
-      state,
-      args: theArgs,
-    });
+    const result = await tryCatch(
+      functions[step.type],
+      {
+        step: step.params,
+        state,
+        args: theArgs,
+      },
+      step.type
+    );
     console.log(result);
   }
 }

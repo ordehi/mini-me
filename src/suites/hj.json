@@ -7,7 +7,7 @@
     },
     {
       "type": "page",
-      "params": { "timeout": 10000, "visible": true }
+      "params": { "timeout": 5000, "visible": true }
     },
     {
       "type": "navigate",
