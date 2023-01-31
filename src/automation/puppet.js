@@ -57,7 +57,7 @@ const functions = {
   },
   navigate: async (params) => {
     const targetPage = params.state.page;
-    const url = params.step;
+    const url = params.args.url || params.step;
     const promises = [];
     promises.push(targetPage.waitForNavigation());
     await targetPage.goto(url);
